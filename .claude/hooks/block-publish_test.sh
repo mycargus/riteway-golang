@@ -48,7 +48,16 @@ echo '{"tool_input":{"command":"bash scripts/test-release.sh"}}' | bash "$HOOK" 
 assert "allows 'bash scripts/test-release.sh'" "0" "$?"
 
 echo '{"tool_input":{"command":"git push origin main"}}' | bash "$HOOK" 2>/dev/null
-assert "allows 'git push origin main'" "0" "$?"
+assert "blocks 'git push origin main'" "2" "$?"
+
+echo '{"tool_input":{"command":"git push -u origin main"}}' | bash "$HOOK" 2>/dev/null
+assert "blocks 'git push -u origin main'" "2" "$?"
+
+echo '{"tool_input":{"command":"git push origin my-feature-branch"}}' | bash "$HOOK" 2>/dev/null
+assert "allows 'git push origin <feature-branch>'" "0" "$?"
+
+echo '{"tool_input":{"command":"git push -u origin my-feature-branch"}}' | bash "$HOOK" 2>/dev/null
+assert "allows 'git push -u origin <feature-branch>'" "0" "$?"
 
 echo '{"tool_input":{"command":"make check"}}' | bash "$HOOK" 2>/dev/null
 assert "allows 'make check'" "0" "$?"
