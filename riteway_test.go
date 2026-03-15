@@ -39,9 +39,9 @@ func TestAssert_EmptyGiven(t *testing.T) {
 	riteway.Assert(ft, riteway.Case[int]{Given: "", Should: "something", Actual: 1, Expected: 1})
 	riteway.Assert(t, riteway.Case[string]{
 		Given:    "empty Given field",
-		Should:   "record a validation error for Given",
+		Should:   "record a validation error for Given showing the bad value",
 		Actual:   ft.errors[0],
-		Expected: "riteway.Assert: Given must not be empty",
+		Expected: "riteway.Assert: Given must not be empty (got \"\")",
 	})
 }
 
@@ -50,9 +50,9 @@ func TestAssert_WhitespaceOnlyGiven(t *testing.T) {
 	riteway.Assert(ft, riteway.Case[int]{Given: "  ", Should: "something", Actual: 1, Expected: 1})
 	riteway.Assert(t, riteway.Case[string]{
 		Given:    "whitespace-only Given field",
-		Should:   "record a validation error for Given",
+		Should:   "record a validation error for Given showing the bad value",
 		Actual:   ft.errors[0],
-		Expected: "riteway.Assert: Given must not be empty",
+		Expected: "riteway.Assert: Given must not be empty (got \"  \")",
 	})
 }
 
@@ -61,9 +61,9 @@ func TestAssert_EmptyShould(t *testing.T) {
 	riteway.Assert(ft, riteway.Case[int]{Given: "valid given", Should: "", Actual: 1, Expected: 1})
 	riteway.Assert(t, riteway.Case[string]{
 		Given:    "empty Should field with valid Given",
-		Should:   "record a validation error for Should",
+		Should:   "record a validation error for Should showing the bad value",
 		Actual:   ft.errors[0],
-		Expected: "riteway.Assert: Should must not be empty",
+		Expected: "riteway.Assert: Should must not be empty (got \"\")",
 	})
 }
 
@@ -72,9 +72,9 @@ func TestAssert_WhitespaceOnlyShould(t *testing.T) {
 	riteway.Assert(ft, riteway.Case[int]{Given: "valid given", Should: "  ", Actual: 1, Expected: 1})
 	riteway.Assert(t, riteway.Case[string]{
 		Given:    "whitespace-only Should field",
-		Should:   "record a validation error for Should",
+		Should:   "record a validation error for Should showing the bad value",
 		Actual:   ft.errors[0],
-		Expected: "riteway.Assert: Should must not be empty",
+		Expected: "riteway.Assert: Should must not be empty (got \"  \")",
 	})
 }
 
@@ -89,9 +89,9 @@ func TestAssert_ZeroValueCase_FirstErrorIsGiven(t *testing.T) {
 	})
 	riteway.Assert(t, riteway.Case[string]{
 		Given:    "zero-value Case[int]{}",
-		Should:   "record the Given validation error first",
+		Should:   "record the Given validation error first showing the bad value",
 		Actual:   ft.errors[0],
-		Expected: "riteway.Assert: Given must not be empty",
+		Expected: "riteway.Assert: Given must not be empty (got \"\")",
 	})
 }
 
@@ -158,9 +158,9 @@ func TestTry_PanicInt(t *testing.T) {
 	_, err := riteway.Try(func() int { panic(42) })
 	riteway.Assert(t, riteway.Case[string]{
 		Given:    "a function that panics with an int",
-		Should:   "return an error with message 'panic: 42'",
+		Should:   "return an error with message 'panic(int): 42' preserving the type name",
 		Actual:   err.Error(),
-		Expected: "panic: 42",
+		Expected: "panic(int): 42",
 	})
 }
 
@@ -198,6 +198,135 @@ func TestTry_RuntimeGoexit(t *testing.T) {
 		Should:   "mark the caller as failed",
 		Actual:   ft.failed,
 		Expected: true,
+	})
+}
+
+func TestAssert_UnexportedFields_WithoutOpts_RecoversPanic(t *testing.T) {
+	ft := &fakeT{}
+	a := configWithSecret{Port: 8080, secret: "a"}
+	b := configWithSecret{Port: 8080, secret: "b"}
+	riteway.Assert(ft, riteway.Case[configWithSecret]{
+		Given:    "struct with unexported field and no cmp.Option",
+		Should:   "record an error instead of panicking",
+		Actual:   a,
+		Expected: b,
+	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "Assert called with unexported field struct and no opts",
+		Should:   "mark fakeT as failed without crashing the test binary",
+		Actual:   ft.failed,
+		Expected: true,
+	})
+	riteway.Assert(t, riteway.Case[int]{
+		Given:    "Assert called with unexported field struct and no opts",
+		Should:   "record exactly one error (Equal and Diff share one recover)",
+		Actual:   len(ft.errors),
+		Expected: 1,
+	})
+	if len(ft.errors) > 0 {
+		riteway.Assert(t, riteway.Case[bool]{
+			Given:    "Assert called with unexported field struct and no opts",
+			Should:   "mention unexported fields in the error message",
+			Actual:   strings.Contains(ft.errors[0], "unexported"),
+			Expected: true,
+		})
+	}
+}
+
+func TestAssert_PanicFromCmpOption_NoFalseUnexportedGuidance(t *testing.T) {
+	ft := &fakeT{}
+	panicOpt := cmp.Comparer(func(x, y int) bool { panic("comparer panicked") })
+	riteway.Assert(ft, riteway.Case[int]{
+		Given:    "cmp.Option that panics with an unrelated message",
+		Should:   "record an error without suggesting unexported-fields guidance",
+		Actual:   1,
+		Expected: 2,
+	}, panicOpt)
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "cmp.Option that panics with unrelated message",
+		Should:   "mark fakeT as failed",
+		Actual:   ft.failed,
+		Expected: true,
+	})
+	if len(ft.errors) > 0 {
+		riteway.Assert(t, riteway.Case[bool]{
+			Given:    "cmp.Option panic unrelated to unexported fields",
+			Should:   "not mention unexported fields in the error message",
+			Actual:   strings.Contains(ft.errors[0], "unexported"),
+			Expected: false,
+		})
+	}
+}
+
+func TestTry_PanicNonError_ZeroValueResult(t *testing.T) {
+	result, _ := riteway.Try(func() int { panic("oops") })
+	riteway.Assert(t, riteway.Case[int]{
+		Given:    "a function that panics",
+		Should:   "return the zero value of T (0 for int, not a partial result)",
+		Actual:   result,
+		Expected: 0,
+	})
+}
+
+func TestRequire_HappyPath(t *testing.T) {
+	riteway.Require(t, riteway.Case[int]{
+		Given:    "two equal integers",
+		Should:   "pass without error",
+		Actual:   42,
+		Expected: 42,
+	})
+}
+
+func TestRequire_IsFatal(t *testing.T) {
+	ft := &fakeT{}
+	postRequireReached := false
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		riteway.Require(ft, riteway.Case[int]{
+			Given:    "mismatched values",
+			Should:   "stop the test immediately",
+			Actual:   1,
+			Expected: 2,
+		})
+		postRequireReached = true // must NOT be reached
+	}()
+	<-done
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "a failed Require",
+		Should:   "not execute code after Require",
+		Actual:   postRequireReached,
+		Expected: false,
+	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "a failed Require",
+		Should:   "mark the test as failed",
+		Actual:   ft.failed,
+		Expected: true,
+	})
+}
+
+func TestRequire_EmptyGiven_IsFatal(t *testing.T) {
+	ft := &fakeT{}
+	postRequireReached := false
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		riteway.Require(ft, riteway.Case[int]{Given: "", Should: "something", Actual: 1, Expected: 1})
+		postRequireReached = true // must NOT be reached
+	}()
+	<-done
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "Require with empty Given",
+		Should:   "not execute code after Require",
+		Actual:   postRequireReached,
+		Expected: false,
+	})
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "Require with empty Given",
+		Should:   "record a validation error naming riteway.Require",
+		Actual:   ft.errors[0],
+		Expected: "riteway.Require: Given must not be empty (got \"\")",
 	})
 }
 
@@ -304,9 +433,9 @@ func TestAssert_TabAndNewlineGiven(t *testing.T) {
 	riteway.Assert(ft, riteway.Case[int]{Given: "\t\n", Should: "something", Actual: 1, Expected: 1})
 	riteway.Assert(t, riteway.Case[string]{
 		Given:    "Given field containing only tabs and newlines",
-		Should:   "record a validation error because strings.TrimSpace trims all Unicode whitespace",
+		Should:   "record a validation error showing the bad value",
 		Actual:   ft.errors[0],
-		Expected: "riteway.Assert: Given must not be empty",
+		Expected: "riteway.Assert: Given must not be empty (got \"\\t\\n\")",
 	})
 }
 

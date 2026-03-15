@@ -44,11 +44,19 @@ type Case[T any] struct {
 func Assert[T any](t testing.TB, c Case[T], opts ...cmp.Option)
 ```
 
-Compares `Actual` and `Expected` using [go-cmp](https://pkg.go.dev/github.com/google/go-cmp/cmp) deep equality. On mismatch, reports a failure with a structured message and human-readable diff.
+Compares `Actual` and `Expected` using [go-cmp](https://pkg.go.dev/github.com/google/go-cmp/cmp) deep equality. On mismatch, reports a failure with a structured message and human-readable diff. **Non-fatal**: calls `t.Errorf`, so the test continues after a failed assertion.
 
 - Validates that `Given` and `Should` are non-empty and non-whitespace.
 - Accepts optional `cmp.Option` values for custom comparison (e.g., `cmpopts.IgnoreUnexported` to skip unexported fields, `cmp.AllowUnexported` to compare them).
 - Works with `*testing.T`, `*testing.B`, and `*testing.F`.
+
+### `Require[T]`
+
+```go
+func Require[T any](t testing.TB, c Case[T], opts ...cmp.Option)
+```
+
+Identical to `Assert` but **fatal**: calls `t.Fatalf`, so the test stops immediately on the first failed assertion. Use `Require` when subsequent assertions are only meaningful if the current one passes.
 
 ### `Try[T]`
 
@@ -61,7 +69,7 @@ Calls `fn` and recovers from any panic, returning it as an error. Useful for ass
 ### `Match`
 
 ```go
-func Match(text, substring string) string
+func Match(text, substring string) string // case-sensitive
 ```
 
 Returns `substring` if found in `text`, otherwise `""`. An empty `substring` always returns `""` to avoid the ambiguous case where `Match("anything", "")` returns `""` and is indistinguishable from "not found".
@@ -72,7 +80,11 @@ Returns `substring` if found in `text`, otherwise `""`. An empty `substring` alw
 func MatchRegexp(text, pattern string) string
 ```
 
-Returns the first match of `pattern` in `text`, or `""` if not found. Panics if `pattern` is not a valid regular expression. Use `Try` to test for that panic.
+Returns the first match of `pattern` in `text`, or `""` if not found. Panics if:
+- `pattern` is not a valid regular expression, or
+- `pattern` can match an empty string (e.g., `x*`, `.*`) — because the result would be indistinguishable from "not found". Use patterns that require at least one character (e.g., `x+`).
+
+Use `Try` to test for either panic. For regexp syntax including inline flags (`(?i)` for case-insensitive, `(?s)` for dotall), see [regexp/syntax](https://pkg.go.dev/regexp/syntax).
 
 ## Usage
 
@@ -87,6 +99,25 @@ func TestAdd(t *testing.T) {
         Expected: 0,
     })
 }
+```
+
+### Require (fatal assertion)
+
+```go
+result, err := db.Query(ctx, q)
+riteway.Require(t, riteway.Case[bool]{
+    Given:    "a valid query",
+    Should:   "not return an error",
+    Actual:   err == nil,
+    Expected: true,
+})
+// only reached if the Require above passed
+riteway.Assert(t, riteway.Case[int]{
+    Given:    "a valid query",
+    Should:   "return one row",
+    Actual:   len(result),
+    Expected: 1,
+})
 ```
 
 ### Table-driven tests

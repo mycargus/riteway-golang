@@ -1,6 +1,7 @@
 package riteway_test
 
 import (
+	"strings"
 	"testing"
 
 	riteway "github.com/mycargus/riteway-golang"
@@ -133,14 +134,74 @@ func TestMatchRegexp_InvalidPattern_Panics(t *testing.T) {
 		Actual:   err != nil,
 		Expected: true,
 	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "an invalid regexp pattern",
+		Should:   "include 'riteway.MatchRegexp' in the panic message for context",
+		Actual:   strings.Contains(err.Error(), "riteway.MatchRegexp"),
+		Expected: true,
+	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "an invalid regexp pattern",
+		Should:   "include the bad pattern in the panic message for debuggability",
+		Actual:   strings.Contains(err.Error(), "[invalid"),
+		Expected: true,
+	})
 }
 
-func TestMatchRegexp_PatternMatchesEmpty(t *testing.T) {
+func TestMatchRegexp_EmptyPattern(t *testing.T) {
 	riteway.Assert(t, riteway.Case[string]{
-		Given:    "pattern 'x*' that can match empty string",
-		Should:   "return empty string (ambiguous match documented behavior)",
-		Actual:   riteway.MatchRegexp("hello", `x*`),
+		Given:    "empty pattern",
+		Should:   "return empty string, matching Match's empty-substring guard",
+		Actual:   riteway.MatchRegexp("hello", ""),
 		Expected: "",
+	})
+}
+
+func TestMatchRegexp_DotDoesNotMatchNewline(t *testing.T) {
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "pattern with . and text containing a newline",
+		Should:   "return empty string because . does not match \\n by default",
+		Actual:   riteway.MatchRegexp("foo\nbar", "foo.bar"),
+		Expected: "",
+	})
+}
+
+func TestMatchRegexp_DotAllFlag(t *testing.T) {
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "pattern with (?s) dotall flag and text containing a newline",
+		Should:   "return the matched text spanning the newline",
+		Actual:   riteway.MatchRegexp("foo\nbar", "(?s)foo.bar"),
+		Expected: "foo\nbar",
+	})
+}
+
+func TestMatchRegexp_ZeroMatchPattern_Panics(t *testing.T) {
+	_, err := riteway.Try(func() string {
+		return riteway.MatchRegexp("hello", `x*`)
+	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "pattern 'x*' that can match an empty string",
+		Should:   "panic to prevent ambiguous result",
+		Actual:   err != nil,
+		Expected: true,
+	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "pattern 'x*' that can match an empty string",
+		Should:   "include the pattern in the panic message",
+		Actual:   strings.Contains(err.Error(), "x*"),
+		Expected: true,
+	})
+}
+
+func TestMatchRegexp_GreedyZeroMatchPattern_Panics(t *testing.T) {
+	_, err := riteway.Try(func() string {
+		return riteway.MatchRegexp("hello world", `.*`)
+	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "pattern '.*' that can match an empty string",
+		Should:   "panic to prevent ambiguous result",
+		Actual:   err != nil,
+		Expected: true,
 	})
 }
 
