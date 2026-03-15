@@ -161,3 +161,50 @@ func TestMatchRegexp_CaseSensitive(t *testing.T) {
 		Expected: "",
 	})
 }
+
+// --- edge case tests ---
+
+func TestMatch_RepeatedSubstring(t *testing.T) {
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "text with a repeated substring",
+		Should:   "return the first occurrence of the substring",
+		Actual:   riteway.Match("ababab", "ab"),
+		Expected: "ab",
+	})
+}
+
+func TestMatch_SubstringWithNewline(t *testing.T) {
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "substring that spans a newline character",
+		Should:   "return the matched substring including the newline",
+		Actual:   riteway.Match("line1\nline2", "1\nline"),
+		Expected: "1\nline",
+	})
+}
+
+func TestMatchRegexp_CaseInsensitiveFlag(t *testing.T) {
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "pattern with inline case-insensitive flag (?i)",
+		Should:   "return the matched text regardless of case",
+		Actual:   riteway.MatchRegexp("Hello World", `(?i)hello`),
+		Expected: "Hello",
+	})
+}
+
+func TestMatchRegexp_ReturnsFirstMatch(t *testing.T) {
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "text with multiple words matching \\w+at",
+		Should:   "return the first match",
+		Actual:   riteway.MatchRegexp("cat bat rat", `\w+at`),
+		Expected: "cat",
+	})
+}
+
+func TestMatchRegexp_DigitPattern(t *testing.T) {
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "text containing a digit sequence surrounded by letters",
+		Should:   "return the digit sequence",
+		Actual:   riteway.MatchRegexp("abc 123 def", `\d+`),
+		Expected: "123",
+	})
+}

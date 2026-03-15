@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	riteway "github.com/mycargus/riteway-golang"
 )
@@ -199,3 +200,115 @@ func TestTry_RuntimeGoexit(t *testing.T) {
 		Expected: true,
 	})
 }
+
+// --- edge case tests ---
+
+type address struct {
+	Street string
+	City   string
+}
+
+type person struct {
+	Name    string
+	Address address
+}
+
+type multiSecret struct {
+	X int
+	a int
+	b string
+}
+
+func TestAssert_NilSlicesAreEqual(t *testing.T) {
+	var s1 []int
+	var s2 []int
+	riteway.Assert(t, riteway.Case[[]int]{
+		Given:    "two nil []int slices",
+		Should:   "pass Assert without recording a failure",
+		Actual:   s1,
+		Expected: s2,
+	})
+}
+
+func TestAssert_NilVsEmptySlice_Fails(t *testing.T) {
+	ft := &fakeT{}
+	var nilSlice []int
+	emptySlice := []int{}
+	riteway.Assert(ft, riteway.Case[[]int]{
+		Given:    "nil []int vs empty []int{}",
+		Should:   "record a failure because nil and empty slices differ",
+		Actual:   nilSlice,
+		Expected: emptySlice,
+	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "nil []int vs empty []int{}",
+		Should:   "mark fakeT as failed",
+		Actual:   ft.failed,
+		Expected: true,
+	})
+}
+
+func TestAssert_EqualMaps(t *testing.T) {
+	m1 := map[string]int{"a": 1, "b": 2}
+	m2 := map[string]int{"a": 1, "b": 2}
+	riteway.Assert(t, riteway.Case[map[string]int]{
+		Given:    "two map[string]int with the same content",
+		Should:   "pass Assert without recording a failure",
+		Actual:   m1,
+		Expected: m2,
+	})
+}
+
+func TestAssert_UnequalMaps_RecordsFailure(t *testing.T) {
+	ft := &fakeT{}
+	m1 := map[string]int{"a": 1}
+	m2 := map[string]int{"a": 2}
+	riteway.Assert(ft, riteway.Case[map[string]int]{
+		Given:    "two map[string]int with different values",
+		Should:   "record a failure",
+		Actual:   m1,
+		Expected: m2,
+	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "two map[string]int with different values",
+		Should:   "mark fakeT as failed",
+		Actual:   ft.failed,
+		Expected: true,
+	})
+}
+
+func TestAssert_NestedStructEqual(t *testing.T) {
+	p1 := person{Name: "Alice", Address: address{Street: "1 Main St", City: "Springfield"}}
+	p2 := person{Name: "Alice", Address: address{Street: "1 Main St", City: "Springfield"}}
+	riteway.Assert(t, riteway.Case[person]{
+		Given:    "two person structs with identical nested address fields",
+		Should:   "pass Assert without recording a failure",
+		Actual:   p1,
+		Expected: p2,
+	})
+}
+
+func TestAssert_MultipleOptions(t *testing.T) {
+	a := multiSecret{X: 7, a: 1, b: "secret"}
+	b := multiSecret{X: 7, a: 99, b: "different"}
+	riteway.Assert(t, riteway.Case[multiSecret]{
+		Given:    "two multiSecret structs with matching exported field and differing unexported fields",
+		Should:   "pass when unexported fields are ignored via cmpopts.IgnoreUnexported",
+		Actual:   a,
+		Expected: b,
+	}, cmpopts.IgnoreUnexported(multiSecret{}))
+}
+
+func TestAssert_TabAndNewlineGiven(t *testing.T) {
+	ft := &fakeT{}
+	riteway.Assert(ft, riteway.Case[int]{Given: "\t\n", Should: "something", Actual: 1, Expected: 1})
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "Given field containing only tabs and newlines",
+		Should:   "record a validation error because strings.TrimSpace trims all Unicode whitespace",
+		Actual:   ft.errors[0],
+		Expected: "riteway.Assert: Given must not be empty",
+	})
+}
+
+// Ensure cmp import is used (compile-time guard).
+var _ = cmp.Equal
