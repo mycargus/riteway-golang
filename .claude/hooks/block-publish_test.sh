@@ -22,6 +22,9 @@ assert() {
 echo '{"tool_input":{"command":"bash scripts/release.sh v0.1.0"}}' | bash "$HOOK" 2>/dev/null
 assert "blocks 'bash scripts/release.sh'" "2" "$?"
 
+echo '{"tool_input":{"command":"make release VERSION=v0.1.0"}}' | bash "$HOOK" 2>/dev/null
+assert "blocks 'make release'" "2" "$?"
+
 echo '{"tool_input":{"command":"git push origin v0.1.0"}}' | bash "$HOOK" 2>/dev/null
 assert "blocks 'git push origin v<tag>'" "2" "$?"
 

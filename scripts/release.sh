@@ -92,15 +92,12 @@ if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
   exit 0
 fi
 
-# ── Tag, push, and create GitHub release ───────────────────────────────────────
+# ── Tag and push ───────────────────────────────────────────────────────────────
 
 git tag "$VERSION"
 git push origin "$VERSION"
 
-gh release create "$VERSION" \
-  --title "$VERSION" \
-  --notes "$RELEASE_NOTES"
-
 echo ""
-echo "released $VERSION"
+echo "tagged and pushed $VERSION — GitHub Actions will create the release"
+echo "  https://github.com/mycargus/riteway-golang/releases/tag/$VERSION"
 echo "  https://pkg.go.dev/$(go list -m)@$VERSION"

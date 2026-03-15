@@ -1,0 +1,62 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: github.repository == 'mycargus/riteway-golang'
+    name: Create GitHub release
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    environment: release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Verify CHANGELOG has entry for tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES=$(awk "/^## \[${VERSION}\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md)
+          if [[ -z "$NOTES" ]]; then
+            echo "error: no CHANGELOG entry for ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+          {
+            echo "RELEASE_NOTES<<NOTES_EOF"
+            echo "$NOTES"
+            echo "NOTES_EOF"
+          } >> "$GITHUB_ENV"
+
+      - name: Lint
+        run: |
+          out=$(gofmt -l .)
+          if [ -n "$out" ]; then
+            echo "gofmt: unformatted files:"
+            echo "$out"
+            exit 1
+          fi
+          go vet ./...
+
+      - name: Test
+        run: go test -count=1 -race ./...
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "${GITHUB_REF_NAME}" \
+            --notes "$RELEASE_NOTES"

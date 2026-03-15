@@ -1,4 +1,4 @@
-.PHONY: test test-scripts fmt vet check
+.PHONY: test test-scripts fmt vet check release
 
 test:
 	go test -count=1 -race ./...
@@ -18,3 +18,6 @@ vet:
 	go vet ./...
 
 check: fmt vet test test-scripts
+
+release:
+	./scripts/release.sh $(VERSION)
