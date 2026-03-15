@@ -88,6 +88,7 @@ Key error paths to check:
 - [ ] Is the `Case[T]` struct field order in the README consistent with the source?
 - [ ] Does the README explain that Assert is non-fatal and Require is fatal?
 - [ ] Is the `Try`/panic behavior clearly documented (what types are caught, what the error looks like)?
+- [ ] Does the README API section for each function match its godoc? Check for behaviors documented in godoc that are absent from the README (zero-value results, nil guards, default behaviors).
 - [ ] Is the `Match` empty-substring behavior documented?
 - [ ] Is the `Match` case-sensitivity noted?
 - [ ] Is the `MatchRegexp` panic-on-invalid AND panic-on-zero-match documented?

@@ -1,7 +1,7 @@
 ---
 name: explore
 description: This skill should be used when adding new functions, after refactoring, or when the user says "explore edge cases", "find bugs", "test boundaries", "what happens if...", "what are the edge cases", or "check for regressions". It runs exploratory edge-case tests against the riteway-golang API, discovers actual behavior, adds missing test cases to the test suite, and reports surprises.
-version: 0.1.0
+version: 0.2.0
 disable-model-invocation: false
 user-invocable: true
 ---
@@ -32,11 +32,17 @@ Test files:
 
 ### Step 2: Identify coverage gaps
 
-For each public function, check which edge case categories are already covered in the test files. See `references/edge-case-categories.md` for the full category list.
+For each public function, derive what's worth testing from the source code itself: what types does it accept, what branches does it have, what can go wrong at the boundaries? Then check the existing tests to see what's already covered.
 
-Compare existing test names and assertions against the categories. Note which categories have no coverage.
+Ask for each function:
+- What happens with nil inputs? Zero values? Empty strings?
+- What happens when two similar-looking things are compared (nil map vs empty map, nil slice vs empty slice)?
+- What happens with each panic path? Is the error message informative?
+- What happens with unusual type parameters (T = string, *int, interface{}, anonymous struct)?
+- What happens when features interact (nested Try, multiple opts, Goexit inside Try)?
+- What happens at the extremes of documented behavior (e.g., patterns that barely qualify as zero-match)?
 
-Focus your exploration on the gaps — don't re-test things the suite already covers.
+Focus on gaps — don't re-test what the suite already covers.
 
 ### Step 3: Write experiments as test functions
 
@@ -71,14 +77,14 @@ Added 7 new test cases, found 2 surprises:
 
 New tests:
 - TestAssert_NilMapVsEmptyMap — nil and empty maps are not equal (expected)
-- TestTry_NilFn — nil function panics, Try recovers with nil-deref message
-    (mildly surprising — undocumented)
+- TestTry_PanicAnonymousStruct — produces verbose type string in message
+    (mildly surprising — should document)
 - ...
 
 Findings:
-1. [Mildly surprising] Try(nil) produces "runtime error: invalid memory
-   address or nil pointer dereference" — technically correct but undocumented.
-   Consider whether to document or guard against nil fn.
+1. [Mildly surprising] panic(anonymous struct) produces a verbose type string
+   like "panic(struct { x int }): { 42}" — technically correct but worth
+   documenting so users know what to expect.
 2. ...
 ```
 
@@ -89,4 +95,3 @@ By default, explore all public functions. If the user specifies a function or ar
 ## References
 
 - `references/testing-patterns.md` — How to write tests in this project (fakeT, Try for panics, naming conventions)
-- `references/edge-case-categories.md` — Edge case categories by function type
