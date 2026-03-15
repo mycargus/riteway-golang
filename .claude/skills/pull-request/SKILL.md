@@ -42,10 +42,11 @@ are no new commits to open a PR for.
 
 ### Step 3: Show the title and body to the user and ask for confirmation
 
-Present the title and body you derived and ask: "Does this look right, or would
-you like to change anything?"
+Present the title and body you derived, then ask:
 
-Do not open the PR until the user confirms.
+**Proceed? (yes/no)**
+
+Do not open the PR until the user confirms with yes.
 
 ### Step 4: Open the PR
 

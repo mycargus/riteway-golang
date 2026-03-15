@@ -14,8 +14,8 @@ case "$input" in
     echo "HOOK_BLOCKED: Publishing must be done manually. See ADR 011." >&2
     exit 2
     ;;
-  *'"command":"git push origin main'*|\
-  *'"command":"git push -u origin main'*)
+  *'"command":"git push origin main"'*|\
+  *'"command":"git push -u origin main"'*)
     echo "HOOK_BLOCKED: Direct pushes to main are not allowed. Open a pull request instead." >&2
     exit 2
     ;;

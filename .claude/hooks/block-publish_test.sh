@@ -59,6 +59,9 @@ assert "allows 'git push origin <feature-branch>'" "0" "$?"
 echo '{"tool_input":{"command":"git push -u origin my-feature-branch"}}' | bash "$HOOK" 2>/dev/null
 assert "allows 'git push -u origin <feature-branch>'" "0" "$?"
 
+echo '{"tool_input":{"command":"git push origin main-feature"}}' | bash "$HOOK" 2>/dev/null
+assert "allows 'git push origin <branch-starting-with-main>'" "0" "$?"
+
 echo '{"tool_input":{"command":"make check"}}' | bash "$HOOK" 2>/dev/null
 assert "allows 'make check'" "0" "$?"
 
