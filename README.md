@@ -1,12 +1,42 @@
 # riteway-golang
 
-A Go port of the [paralleldrive/riteway](https://github.com/paralleldrive/riteway) testing philosophy. Every test must answer five questions:
+**The standard testing assertion style for AI Driven Development (AIDD) and software agents.**
 
-1. **What is the unit under test?**
-2. **What should it do?**
-3. **What was the actual output?**
-4. **What was the expected output?**
-5. **How do you reproduce the failure?**
+A Go port of the [paralleldrive/riteway](https://github.com/paralleldrive/riteway) testing philosophy.
+
+Riteway is a testing assertion style and philosophy which leads to simple, readable, helpful unit tests for humans and AI agents.
+
+It lets you write better, more readable tests with a fraction of the code that traditional assertion frameworks would use.
+
+Riteway is the AI-native way to build a modern test suite. It pairs well with Go's `testing` package, Claude Code, Cursor Agent, and more.
+
+* **R**eadable
+* **I**solated/**I**ntegrated
+* **T**horough
+* **E**xplicit
+
+Riteway forces you to write **R**eadable, **I**solated, and **E**xplicit tests, because that's the only way you can use the API. It also makes it easier to be thorough by making test assertions so simple that you'll want to write more of them.
+
+## Why Riteway for AI Driven Development?
+
+Riteway's structured approach makes it ideal for AIDD:
+
+**📖 Learn more:** [Better AI Driven Development with Test Driven Development](https://medium.com/effortless-programming/better-ai-driven-development-with-test-driven-development-d4849f67e339)
+
+- **Clear requirements**: The given/should structure and 5-question framework help AI better understand exactly what to build
+- **Readable by design**: Natural language descriptions make tests comprehensible to both humans and AI
+- **Simple API**: Minimal surface area reduces AI confusion and hallucinations
+- **Token efficient**: Concise syntax saves valuable context window space
+
+## The 5 Questions Every Test Must Answer
+
+There are [5 questions every unit test must answer](https://medium.com/javascript-scene/what-every-unit-test-needs-f6cd34d9836d). Riteway forces you to answer them.
+
+1. What is the unit under test (module, function, class, whatever)?
+2. What should it do? (Prose description)
+3. What was the actual output?
+4. What was the expected output?
+5. How do you reproduce the failure?
 
 Enforcing these questions produces failure messages that are immediately actionable — no guessing, no archaeology.
 
