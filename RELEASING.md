@@ -20,8 +20,8 @@ All commits must be signed (see ADR-012). Configure Git to sign automatically:
 
 ```sh
 gpg --list-secret-keys --keyid-format=long   # find your key ID
-git config --global commit.gpgsign true
-git config --global user.signingkey <your-key-id>
+git config commit.gpgsign true
+git config user.signingkey <your-key-id>
 ```
 
 Register your public key on GitHub: **Settings → SSH and GPG keys → New GPG key**.
@@ -29,9 +29,9 @@ Register your public key on GitHub: **Settings → SSH and GPG keys → New GPG 
 **SSH signing (modern alternative):**
 
 ```sh
-git config --global commit.gpgsign true
-git config --global gpg.format ssh
-git config --global user.signingkey ~/.ssh/id_ed25519.pub
+git config commit.gpgsign true
+git config gpg.format ssh
+git config user.signingkey ~/.ssh/id_ed25519.pub
 ```
 
 Register your public key on GitHub: **Settings → SSH and GPG keys → New signing key**.
