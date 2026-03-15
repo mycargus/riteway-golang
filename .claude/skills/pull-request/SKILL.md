@@ -35,10 +35,7 @@ are no new commits to open a PR for.
 - If there is only one commit, use its subject line directly
 - If there are multiple commits, synthesize a single summary
 
-**Body:**
-- Explain what changed and why in plain prose
-- Do not just restate the commit messages — add context
-- Keep it concise; one short paragraph is usually enough
+**Body:** Follow the template and rules in [template.md](template.md).
 
 ### Step 3: Show the title and body to the user and ask for confirmation
 
