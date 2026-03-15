@@ -40,7 +40,14 @@ signing setup instructions.
 
 1. Fork the repo and create a branch from `main`.
 2. Make your changes and ensure `make check` passes locally.
-3. Open a pull request with a clear title and description.
+3. Open a pull request:
+
+```sh
+gh pr create --title "Short description" --body "What and why."
+```
+
+The title and body become the squash commit message on `main`, so write them
+as you would a commit message: title is the subject line, body is the context.
 
 Before a PR can merge, the following are required:
 
