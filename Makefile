@@ -20,4 +20,8 @@ vet:
 check: fmt vet test test-scripts
 
 release:
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Error: VERSION is not set. Usage: make release VERSION=v0.1.0"; \
+		exit 1; \
+	fi
 	./scripts/release.sh $(VERSION)
