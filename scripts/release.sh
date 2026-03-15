@@ -28,6 +28,11 @@ cd "$REPO_ROOT"
 # Strip the leading 'v' to match CHANGELOG headings (e.g. [0.1.0])
 BARE_VERSION="${VERSION#v}"
 
+if [[ ! -f CHANGELOG.md ]]; then
+  echo "error: CHANGELOG.md not found"
+  exit 1
+fi
+
 RELEASE_NOTES="$(awk \
   "/^## \[${BARE_VERSION}\]/{found=1; next} found && /^## \[/{exit} found{print}" \
   CHANGELOG.md)"
@@ -81,7 +86,7 @@ echo ""
 echo "release notes:"
 echo "$RELEASE_NOTES" | sed 's/^/  /'
 echo ""
-read -r -p "tag, push, and create GitHub release? [y/N] " CONFIRM
+read -r -p "tag, push, and create GitHub release? [y/N] " CONFIRM || CONFIRM=""
 if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
   echo "aborted"
   exit 0

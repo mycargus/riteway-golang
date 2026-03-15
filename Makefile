@@ -1,7 +1,10 @@
-.PHONY: test fmt vet check
+.PHONY: test test-scripts fmt vet check
 
 test:
 	go test -count=1 -race ./...
+
+test-scripts:
+	bash scripts/test-release.sh
 
 fmt:
 	@out=$$(gofmt -l .); \
@@ -14,4 +17,4 @@ fmt:
 vet:
 	go vet ./...
 
-check: fmt vet test
+check: fmt vet test test-scripts
