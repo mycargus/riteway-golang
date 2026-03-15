@@ -1,0 +1,16 @@
+# Test binaries and coverage output
+*.test
+*.out
+coverage.html
+
+# Build output
+/dist/
+
+# IDE and editor directories
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
