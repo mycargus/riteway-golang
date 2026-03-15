@@ -108,6 +108,9 @@ func doAssert[T any](t testing.TB, c Case[T], name string, errorf func(string, .
 // returns nil (indistinguishable from no panic). This module requires
 // Go 1.21 to avoid that ambiguity.
 func Try[T any](fn func() T) (result T, err error) {
+	if fn == nil {
+		return *new(T), errors.New("riteway.Try: fn must not be nil")
+	}
 	completed := false
 	defer func() {
 		r := recover()

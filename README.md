@@ -64,7 +64,7 @@ Identical to `Assert` but **fatal**: calls `t.Fatalf`, so the test stops immedia
 func Try[T any](fn func() T) (result T, err error)
 ```
 
-Calls `fn` and recovers from any panic, returning it as an error. Useful for asserting panic behavior in tests. Does **not** catch `runtime.Goexit` (i.e., `t.FailNow`/`t.Fatal` inside `Try` still terminate the subtest normally).
+Calls `fn` and recovers from any panic, returning it as an error. Useful for asserting panic behavior in tests. Does **not** catch `runtime.Goexit` (i.e., `t.FailNow`/`t.Fatal` inside `Try` still terminate the subtest normally). On panic, `result` is the zero value of `T`. `fn` must not be nil.
 
 ### `Match`
 
@@ -77,10 +77,10 @@ Returns `substring` if found in `text`, otherwise `""`. An empty `substring` alw
 ### `MatchRegexp`
 
 ```go
-func MatchRegexp(text, pattern string) string
+func MatchRegexp(text, pattern string) string // case-sensitive; use (?i) for case-insensitive
 ```
 
-Returns the first match of `pattern` in `text`, or `""` if not found. Panics if:
+Returns the first match of `pattern` in `text`, or `""` if not found. By default `.` does not match newlines; use `(?s)` to enable dotall mode. Panics if:
 - `pattern` is not a valid regular expression, or
 - `pattern` can match an empty string (e.g., `x*`, `.*`) — because the result would be indistinguishable from "not found". Use patterns that require at least one character (e.g., `x+`).
 

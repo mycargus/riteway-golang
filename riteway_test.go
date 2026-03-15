@@ -441,3 +441,116 @@ func TestAssert_TabAndNewlineGiven(t *testing.T) {
 
 // Ensure cmp import is used (compile-time guard).
 var _ = cmp.Equal
+
+// --- exploratory edge case tests ---
+
+func TestAssert_NilMapVsEmptyMap_Fails(t *testing.T) {
+	ft := &fakeT{}
+	var nilMap map[string]int
+	emptyMap := map[string]int{}
+	riteway.Assert(ft, riteway.Case[map[string]int]{
+		Given:    "nil map vs empty map[string]int{}",
+		Should:   "record a failure because nil and empty maps differ",
+		Actual:   nilMap,
+		Expected: emptyMap,
+	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "nil map vs empty map[string]int{}",
+		Should:   "mark fakeT as failed",
+		Actual:   ft.failed,
+		Expected: true,
+	})
+}
+
+func TestAssert_AllowUnexported_EqualFields_Passes(t *testing.T) {
+	a := configWithSecret{Port: 8080, secret: "same"}
+	b := configWithSecret{Port: 8080, secret: "same"}
+	riteway.Assert(t, riteway.Case[configWithSecret]{
+		Given:    "two structs with identical exported and unexported fields",
+		Should:   "pass when cmp.AllowUnexported is used",
+		Actual:   a,
+		Expected: b,
+	}, cmp.AllowUnexported(configWithSecret{}))
+}
+
+func TestAssert_AllowUnexported_UnequalFields_Fails(t *testing.T) {
+	ft := &fakeT{}
+	a := configWithSecret{Port: 8080, secret: "alpha"}
+	b := configWithSecret{Port: 8080, secret: "beta"}
+	riteway.Assert(ft, riteway.Case[configWithSecret]{
+		Given:    "two structs with differing unexported fields",
+		Should:   "record a failure when cmp.AllowUnexported is used",
+		Actual:   a,
+		Expected: b,
+	}, cmp.AllowUnexported(configWithSecret{}))
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "two structs with differing unexported fields",
+		Should:   "mark fakeT as failed",
+		Actual:   ft.failed,
+		Expected: true,
+	})
+}
+
+func TestTry_ZeroValueString(t *testing.T) {
+	result, _ := riteway.Try(func() string { panic("oops") })
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "a Try[string] function that panics",
+		Should:   "return empty string as zero value",
+		Actual:   result,
+		Expected: "",
+	})
+}
+
+func TestTry_ZeroValuePointer(t *testing.T) {
+	result, _ := riteway.Try(func() *int { panic("oops") })
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "a Try[*int] function that panics",
+		Should:   "return nil as zero value",
+		Actual:   result == nil,
+		Expected: true,
+	})
+}
+
+func TestTry_PanicAnonymousStruct(t *testing.T) {
+	_, err := riteway.Try(func() int {
+		panic(struct{ Code int }{Code: 42})
+	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "a function that panics with an anonymous struct value",
+		Should:   "include 'struct' in the error message type",
+		Actual:   strings.Contains(err.Error(), "struct"),
+		Expected: true,
+	})
+}
+
+func TestTry_NilFn(t *testing.T) {
+	_, err := riteway.Try[int](nil)
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "a nil function passed to Try",
+		Should:   "return a descriptive error naming riteway.Try",
+		Actual:   err.Error(),
+		Expected: "riteway.Try: fn must not be nil",
+	})
+}
+
+func TestTry_NestedTry(t *testing.T) {
+	outer, outerErr := riteway.Try(func() string {
+		_, innerErr := riteway.Try(func() int { panic("inner panic") })
+		if innerErr == nil {
+			return "wrong"
+		}
+		return "outer completed"
+	})
+	riteway.Assert(t, riteway.Case[string]{
+		Given:    "nested Try where the inner function panics",
+		Should:   "outer Try completes normally",
+		Actual:   outer,
+		Expected: "outer completed",
+	})
+	riteway.Assert(t, riteway.Case[bool]{
+		Given:    "nested Try where the inner function panics",
+		Should:   "outer error is nil",
+		Actual:   outerErr == nil,
+		Expected: true,
+	})
+}
