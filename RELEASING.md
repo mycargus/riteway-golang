@@ -12,6 +12,32 @@ tag and handles creating the GitHub release.
 - Go 1.21+ installed
 - `gh` CLI installed and authenticated (`gh auth login`)
 
+### Commit signing setup
+
+All commits must be signed (see ADR-012). Configure Git to sign automatically:
+
+**GPG signing:**
+
+```sh
+gpg --list-secret-keys --keyid-format=long   # find your key ID
+git config --global commit.gpgsign true
+git config --global user.signingkey <your-key-id>
+```
+
+Register your public key on GitHub: **Settings → SSH and GPG keys → New GPG key**.
+
+**SSH signing (modern alternative):**
+
+```sh
+git config --global commit.gpgsign true
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/id_ed25519.pub
+```
+
+Register your public key on GitHub: **Settings → SSH and GPG keys → New signing key**.
+
+---
+
 ### One-time setup: release environment
 
 GitHub Actions uses a `release` environment to gate tag-triggered runs. Configure
