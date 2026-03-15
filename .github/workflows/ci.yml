@@ -6,6 +6,16 @@ on:
   pull_request:
 
 jobs:
+  hooks:
+    name: Hook tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run hook tests
+        run: bash .claude/hooks/block-publish_test.sh
+
   lint:
     name: Lint
     runs-on: ubuntu-latest

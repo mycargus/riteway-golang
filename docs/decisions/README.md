@@ -16,3 +16,4 @@ Decisions made during riteway-golang development, with context and rationale.
 | 10 | APIs from JavaScript riteway not ported to Go | [010](010-omitted-javascript-apis.md) |
 | 11 | No publishing automation | [011](011-no-publishing-automation.md) |
 | 12 | Signed commits required | [012](012-signed-commits.md) |
+| 13 | Branch protection for main | [013](013-branch-protection.md) |
